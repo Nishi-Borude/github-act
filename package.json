@@ -1,0 +1,43 @@
+{
+  "name": "@ekx/unit",
+  "version": "0.0.6",
+  "description": "Simple header-only testing library for C",
+  "scripts": {
+    "release": "changeset publish",
+    "version": "changeset version && yarn && git add yarn.lock && yarn run build && git add include/unit.h",
+    "build": "node scripts/amalgamate.js",
+    "test": "node scripts/test.js",
+    "test-wasm": "node scripts/test-wasm.js"
+  },
+  "files": [
+    "CMakeLists.txt",
+    "include"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:eliasku/unit.git"
+  },
+  "author": "Ilya Kuzmichev <eliasku.games@gmail.com> (https://eliasku-games.web.app)",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "c",
+    "testing",
+    "unit-testing",
+    "cmake",
+    "embedded",
+    "cross-platform",
+    "bdd",
+    "assertions",
+    "clang",
+    "kiss",
+    "header-only",
+    "single-header-library"
+  ],
+  "bugs": {
+    "url": "https://github.com/eliasku/unit/issues",
+    "email": "eliasku.games@gmail.com"
+  }
+}

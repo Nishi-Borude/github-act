@@ -1,39 +1,29 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.19)
 
-project(llb)
-set (VERSION 0.0.6)
+# STANDALONE project
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    set(UNIT_LIBRARY_PROJECT ON)
+endif ()
 
-OPTION(DEBUG "add debug flags" OFF)
+project(unit C)
+add_library(${PROJECT_NAME} INTERFACE)
+target_include_directories(${PROJECT_NAME} INTERFACE include)
 
-add_definitions("-D_DEFAULT_SOURCE")
-find_package(OpenSSL REQUIRED)
+# alias for NPM library name
+add_library(ekx::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
+if (UNIT_LIBRARY_PROJECT)
+    add_subdirectory(src)
+endif ()
 
-include_directories(include)
-file(GLOB SOURCES src/*.c)
+if (UNIT_LIBRARY_PROJECT)
+    enable_testing()
 
-set(AUTHOR "Andrea Giacomo Baldan")
-set(LICENSE "BSD2 license")
+    include(cmake/code-coverage.cmake)
+    target_code_coverage(unit INTERFACE)
 
-# Executable
-add_executable(llb ${SOURCES} include/llb_internal.h)
+    add_subdirectory(test)
+    add_subdirectory(example)
 
-if (APPLE)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/usr/local/opt/openssl/include")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/local/opt/openssl/include")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/opt/openssl/lib")
-endif (APPLE)
-
-if (DEBUG)
-    message(STATUS "Configuring build for debug")
-    TARGET_LINK_LIBRARIES(llb pthread ssl crypto)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wunused -Werror -pedantic \
-    -Wno-unused-result -std=c11 -ggdb -fsanitize=address \
-    -fsanitize=undefined -fno-omit-frame-pointer -pg")
-else (DEBUG)
-    message(STATUS "Configuring build for production")
-    TARGET_LINK_LIBRARIES(llb pthread ssl crypto)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wunused -Werror -pedantic \
-    -Wno-unused-result -std=c11 -O3")
-endif (DEBUG)
+    coverage_all()
+endif ()

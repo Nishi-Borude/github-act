@@ -1,114 +1,70 @@
-llb
-===
+# unit
 
-![llb CI](https://github.com/codepr/llb/workflows/llb%20CI/badge.svg?branch=master)
+[![Build](https://github.com/eliasku/unit/actions/workflows/build.yml/badge.svg)](https://github.com/eliasku/unit/actions/workflows/build.yml)
+[![codecov](https://codecov.io/gh/eliasku/unit/branch/master/graph/badge.svg?token=NFTrtCHQ2r)](https://codecov.io/gh/eliasku/unit)
 
-(**L**)ittle(**L**)oad(**B**)alancer, a dead simple event-driven load-balancer.
-Supports Linux (and arguably OSX) through epoll and poll/select (kqueue on
-BSD-like) as fallback, it uses an event-loop library borrowed from
-[Sol](https://github.com/codepr/sol.git).
+## 🥼 Tiny unit testing library for C language 🥼
 
-Written out of boredom/learning purpose (50/50) during self-isolation. Sure
-thing there will be bugs and plenty of corner cases to be addressed.
+[![Standard](https://img.shields.io/badge/C-11-pink.svg)](https://en.wikipedia.org/wiki/C_(programming_language))
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Download](https://img.shields.io/badge/Download%20%20-unit.h-lightgreen.svg)](https://raw.githubusercontent.com/eliasku/unit/master/include/unit.h)
+[![Documentation](https://img.shields.io/badge/docs-latest-white)](http://unit.rtfd.io/)
+[![Twitter](https://img.shields.io/twitter/follow/eliaskuvoice.svg?style=flat&label=Follow&logoColor=white&color=1da1f2&logo=twitter)](https://twitter.com/eliaskuvoice)
+[![Try it online](https://img.shields.io/badge/Try%20it-online-orange.svg)](https://godbolt.org/z/17vjqsnca)
 
-Features:
+![output](docs/output.gif)
 
-- Logging
-- Configuration file on disk
-- Basic healthcheck for backends
-- TLS encryption (to be refined)
-- Daemon mode
-- Multithread event-loop
-- HTTP and TCP load-balancing
-- Round-robin, weighted round-robin, hash-balancing, random-balancing,
-  leastconn, leasttraffic
-- Pretty small (~2000 sloc) and little dependencies (openssl)
+## Example
 
-Next:
+Compile executable with `-D UNIT_TESTING` to enable tests
 
-- Improvements on all previous points
+```c
+#define UNIT_MAIN
+#include <unit.h>
 
-## Build
+SUITE( suite name ) {
+  DESCRIBE( subcase name ) {
+    IT("is test behaviour") {
+      WARN("use WARN_* to print failed assumptions");
+      CHECK("use CHECK_* to continue execute assertions on fail");
+      REQUIRE("use REQUIRE_* to skip next assertions on fail");
+    }
+  }
+}
 
-**Dependencies**
-
-- gcc
-- make
-- cmake
-- OpenSSL (libssl-dev)
-
-```sh
-$ cmake . && make
 ```
 
-## Quickstart
+## Command-line options
 
-Backend servers at http://localhost:8080 and http://localhost:8081, balancing
-strategy WEIGHTED-ROUND-ROBIN
+- `--version`, `-v`: Prints the version of `unit` library
+- `--help`, `-h`: Prints usage help message
+- `--list`, `-l`: Prints all available tests
+- `--animate`, `-a`: Simulate waits for printing messages, just for making fancy printing animation
+- `--ascii`: Don't use colors and fancy unicode symbols in the output
+- `--short-filenames`, `-S`: Use only basename for displaying file-pos information
+- `--quiet`, `-q`: Disables all output
+- `-r=xml`: Special switch prints XML report in DocTest-friendly format (for CLion test run configuration)
 
-```sh
-$ ./llb -v -b http://localhost:8080:2,http://localhost:8081:4 -l weighted-round-robin
-```
+## Features and design goals
 
-A simple configuration can be passed in with `-c` flag:
+### ✓ Main focus and features
 
-```sh
-$ ./llb -c path/to/llb.conf
-```
+- Written in Pure C: only standard `libc` is used
+- Simplicity and tiny build-size
+- No dynamic memory allocations: only static memory is used for reporting test running infrastructure.
+- Single-header library: easy to integrate
+- Embedded runner & pretty reporter: build self-executable test
+- Disable test code: allow you to write tests for your private implementation right at the end of `impl.c` file
+- Cross-platform: should work for Linux / macOS / Windows / WebAssembly
 
-As of now the configuration is very small and self-explanatory, default path is
-located to `/etc/llb/llb.conf`:
+### ✕ What you won't find here
 
-```sh
-# llb configuration file, uncomment and edit desired configuration
+- Cross-compiler support: no `MSVC` support, only `clang` is tested
+- Multithreading and parallel test running
+- Tricky test matchers design
+- Fixtures, `before` / `after` or mocking
+- Crash tests and signal interception
+- Fuzz testing
 
-# accepts http | tcp
-mode http
-
-# Load-balancing settings
-
-# Frontends are the endpoint exposed as entry point for connecting clients
-frontends 127.0.0.1:8789,127.0.0.1:8790,127.0.0.1:8791
-
-# Backends is a pool of server to load-balance requests from clients
-backends 127.0.0.1:6090,127.0.0.1:6090,127.0.0.1:6090
-
-# Set round robin as balancing algorithm
-# Other options available can be
-# random-balancing | hash-balancing | leastconn | leasttraffic | weighted-round-robin
-load_balancing round-robin
-
-# Logging configuration
-
-# Could be either DEBUG, INFO/INFORMATION, WARNING, ERROR
-log_level DEBUG
-
-log_path /tmp/llb.log
-
-# TCP backlog, size of the complete connection queue
-tcp_backlog 128
-
-# TLS certs
-
-#cafile certs/ca.crt
-#certfile certs/alaptop.crt
-#keyfile certs/alaptop.key
-
-# TLS supported versions
-#tls_protocols tlsv1,tlsv1_1,tlsv1_2,tlsv1_3
-```
-
-Executable accepts some simple arguments, in case of a configuration file
-specified every setting is overridden by it.
-
-- `-h` print an usage help
-- `-v` enable verbose debug messages
-- `-d` run in daemon mode
-- `-c <path/to/conf>` specify a configuration path, defaults to `/etc/llb/llb.conf`
-- `-l <load-balancing-algorithm>` specify a load-balancing algorithm to be
-  used. Choices are `round-robin`, `hash`, `random`, `leastconn`, `leasttraffic`
-  and `weighted-round-robin`
-- `-m <mode>` choose the run mode between `tcp` and `http`. Defaults to `http`
-- `-b <host:port:weight>,<host:port:weight>..` add backend machines with a
-  weight associated, it will be ignored for load-balancing algorithms other
-  than `weighted-round-robin`
+> In any case, if you have a desire, you can support and contribute! Feel free to ask me any **feature** you need. 
+> **Thank you for your interest!** 
